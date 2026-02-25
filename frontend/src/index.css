@@ -5,12 +5,14 @@
   --primary: #635bff;
   /* Stripe Indigo */
   --primary-hover: #5851ea;
-  --primary-light: #f6f9fc;
+  --primary-light: #e8e7fc;
 
   --bg-body: #f6f9fc;
   --bg-surface: #ffffff;
+  --card-bg: #ffffff;
 
   --text-main: #1a1f36;
+  --text: #1a1f36;
   --text-secondary: #697386;
 
   --border: #e3e8ee;
