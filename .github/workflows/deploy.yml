@@ -7,6 +7,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+env:
+  PROJECT_NAME: brady-text-auto-label
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -31,11 +34,19 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
+      - name: Create Cloudflare Pages project if not exists
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create ${{ env.PROJECT_NAME }} --production-branch=main
+        continue-on-error: true
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: qr-label-print-template
+          projectName: ${{ env.PROJECT_NAME }}
           directory: ./frontend/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
