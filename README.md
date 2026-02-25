@@ -43,7 +43,7 @@ npm run dev
 1. Open frontend in browser.
 2. Set server URL (`http://localhost:5001` by default).
 3. Load/select printer.
-4. Enter QR data and optional label text.
+4. Paste scanned QR data (`;` separated), then review editable fields (first value, last value, date, pincode, country).
 5. Click **Generate & Print QR**.
 
 ## How to request new features (for engineers or AI)

@@ -18,17 +18,25 @@ This server is the local companion for the QR Template frontend. It generates QR
 ## QR Endpoints
 
 *   `GET /api/qr/preview?data=...&label=...&width=...&height=...`
+        * Also supports optional text fields: `first_value`, `last_value`, `date_text`, `pincode`, `country`.
         * Returns generated QR label PDF for preview.
 *   `POST /api/qr/print`
         * Body:
             ```json
             {
-                "data": "https://example.com/item/ABC-123",
-                "label": "Sample QR Label",
+                "data": "113A8200-625;DOOR ASSY-CENTER & INBD MLG;;000119061000300029;110000730222",
+                "label": "",
                 "printer_name": "Optional Printer Name",
                 "label_settings": {
                     "width": 3.94,
                     "height": 2.0
+                },
+                "text_fields": {
+                    "firstValue": "113A8200-625",
+                    "lastValue": "110000730222",
+                    "dateText": "03 MAY 2025",
+                    "pincode": "482305",
+                    "country": "INDIA"
                 },
                 "username": "template-user"
             }

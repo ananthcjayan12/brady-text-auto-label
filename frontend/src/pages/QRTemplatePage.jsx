@@ -1,20 +1,59 @@
-import { useEffect, useMemo, useState } from 'react';
-import QRCode from 'qrcode';
+import { useMemo, useState } from 'react';
 import { Printer, RefreshCw, Server } from 'lucide-react';
 import { api } from '../api';
 
 const DEFAULT_SERVER = 'http://localhost:5001';
+const DEFAULT_SCANNED_TEXT = '113A8200-625;DOOR ASSY-CENTER & INBD MLG;;000119061000300029;110000730222';
+
+const getDefaultDateText = () => new Date().toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+}).toUpperCase();
+
+const parseScannedText = (value) => {
+    const raw = (value || '').trim();
+    if (!raw) {
+        return { firstValue: '', lastValue: '' };
+    }
+
+    const parts = raw.split(';').map((part) => part.trim());
+    const firstValue = parts[0] || raw;
+    const lastValue = [...parts].reverse().find((part) => Boolean(part)) || firstValue;
+
+    return { firstValue, lastValue };
+};
 
 function QRTemplatePage() {
     const [serverUrl, setServerUrl] = useState(localStorage.getItem('api_url') || DEFAULT_SERVER);
     const [status, setStatus] = useState({ type: 'idle', message: '' });
-    const [qrData, setQrData] = useState('https://example.com/item/ABC-123');
-    const [label, setLabel] = useState('Sample QR Label');
+    const [scannedText, setScannedText] = useState(DEFAULT_SCANNED_TEXT);
+    const [label, setLabel] = useState('');
     const [printers, setPrinters] = useState([]);
     const [selectedPrinter, setSelectedPrinter] = useState(localStorage.getItem('selected_printer') || '');
     const [loadingPrinters, setLoadingPrinters] = useState(false);
     const [printing, setPrinting] = useState(false);
-    const [previewSrc, setPreviewSrc] = useState('');
+    const [textFields, setTextFields] = useState(() => {
+        const parsed = parseScannedText(DEFAULT_SCANNED_TEXT);
+        return {
+            firstValue: parsed.firstValue,
+            lastValue: parsed.lastValue,
+            dateText: getDefaultDateText(),
+            pincode: '482305',
+            country: 'INDIA'
+        };
+    });
+
+    const qrData = scannedText.trim();
+
+    const previewLines = useMemo(() => {
+        return [
+            textFields.firstValue,
+            textFields.lastValue,
+            textFields.dateText,
+            `${textFields.pincode} ${textFields.country}`.trim()
+        ].filter(Boolean);
+    }, [textFields]);
 
     const [labelSettings, setLabelSettings] = useState(() => {
         const stored = localStorage.getItem('label_settings');
@@ -32,20 +71,21 @@ function QRTemplatePage() {
         }
     });
 
-    useEffect(() => {
-        regeneratePreview();
-    }, [qrData]);
-
     const previewUrl = useMemo(() => {
         const base = serverUrl.replace(/\/$/, '');
         const params = new URLSearchParams({
             data: qrData,
             label,
             width: String(labelSettings.width),
-            height: String(labelSettings.height)
+            height: String(labelSettings.height),
+            first_value: textFields.firstValue,
+            last_value: textFields.lastValue,
+            date_text: textFields.dateText,
+            pincode: textFields.pincode,
+            country: textFields.country
         });
         return `${base}/api/qr/preview?${params.toString()}`;
-    }, [serverUrl, qrData, label, labelSettings]);
+    }, [serverUrl, qrData, label, labelSettings, textFields]);
 
     const saveSettings = () => {
         const normalizedUrl = serverUrl.replace(/\/$/, '');
@@ -93,25 +133,8 @@ function QRTemplatePage() {
         }
     };
 
-    const regeneratePreview = async () => {
-        if (!qrData.trim()) {
-            setPreviewSrc('');
-            return;
-        }
-        try {
-            const dataUrl = await QRCode.toDataURL(qrData, {
-                margin: 1,
-                width: 280,
-                errorCorrectionLevel: 'M'
-            });
-            setPreviewSrc(dataUrl);
-        } catch {
-            setPreviewSrc('');
-        }
-    };
-
     const onPrint = async () => {
-        if (!qrData.trim()) {
+        if (!qrData) {
             setStatus({ type: 'error', message: 'Enter QR data before printing.' });
             return;
         }
@@ -124,7 +147,8 @@ function QRTemplatePage() {
                 data: qrData,
                 label,
                 printerName: selectedPrinter || null,
-                labelSettings
+                labelSettings,
+                textFields
             });
 
             if (response?.mode === 'preview') {
@@ -142,6 +166,16 @@ function QRTemplatePage() {
         } finally {
             setPrinting(false);
         }
+    };
+
+    const onScannedTextChange = (value) => {
+        setScannedText(value);
+        const parsed = parseScannedText(value);
+        setTextFields((prev) => ({
+            ...prev,
+            firstValue: parsed.firstValue,
+            lastValue: parsed.lastValue
+        }));
     };
 
     return (
@@ -221,17 +255,57 @@ function QRTemplatePage() {
                 <div className="card">
                     <div className="flex items-center" style={{ marginBottom: '12px' }}>
                         <Printer size={18} color="var(--primary)" />
-                        <h3>QR Content</h3>
+                        <h3>QR Content & Label Text</h3>
                     </div>
 
-                    <label style={{ fontSize: '13px', fontWeight: 500 }}>QR Data</label>
+                    <label style={{ fontSize: '13px', fontWeight: 500 }}>Scanned QR Text</label>
                     <textarea
                         className="input"
                         rows={4}
-                        value={qrData}
-                        onChange={(e) => setQrData(e.target.value)}
-                        placeholder="Text or URL to encode"
+                        value={scannedText}
+                        onChange={(e) => onScannedTextChange(e.target.value)}
+                        placeholder="Paste scanner output separated by ;"
                         style={{ marginTop: '6px', marginBottom: '10px', resize: 'vertical' }}
+                    />
+
+                    <label style={{ fontSize: '13px', fontWeight: 500 }}>First Value</label>
+                    <input
+                        className="input"
+                        value={textFields.firstValue}
+                        onChange={(e) => setTextFields((prev) => ({ ...prev, firstValue: e.target.value }))}
+                        style={{ marginTop: '6px', marginBottom: '10px' }}
+                    />
+
+                    <label style={{ fontSize: '13px', fontWeight: 500 }}>Last Value</label>
+                    <input
+                        className="input"
+                        value={textFields.lastValue}
+                        onChange={(e) => setTextFields((prev) => ({ ...prev, lastValue: e.target.value }))}
+                        style={{ marginTop: '6px', marginBottom: '10px' }}
+                    />
+
+                    <label style={{ fontSize: '13px', fontWeight: 500 }}>Date</label>
+                    <input
+                        className="input"
+                        value={textFields.dateText}
+                        onChange={(e) => setTextFields((prev) => ({ ...prev, dateText: e.target.value }))}
+                        style={{ marginTop: '6px', marginBottom: '10px' }}
+                    />
+
+                    <label style={{ fontSize: '13px', fontWeight: 500 }}>Pincode</label>
+                    <input
+                        className="input"
+                        value={textFields.pincode}
+                        onChange={(e) => setTextFields((prev) => ({ ...prev, pincode: e.target.value }))}
+                        style={{ marginTop: '6px', marginBottom: '10px' }}
+                    />
+
+                    <label style={{ fontSize: '13px', fontWeight: 500 }}>Country</label>
+                    <input
+                        className="input"
+                        value={textFields.country}
+                        onChange={(e) => setTextFields((prev) => ({ ...prev, country: e.target.value }))}
+                        style={{ marginTop: '6px', marginBottom: '10px' }}
                     />
 
                     <label style={{ fontSize: '13px', fontWeight: 500 }}>Label Text (optional)</label>
@@ -250,13 +324,17 @@ function QRTemplatePage() {
 
             <div className="card" style={{ marginTop: '16px' }}>
                 <h3 style={{ marginBottom: '8px' }}>Preview</h3>
-                {previewSrc ? (
+                {previewLines.length ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                        <img src={previewSrc} alt="QR Preview" style={{ width: 220, height: 220, border: '1px solid var(--border)', borderRadius: '8px' }} />
+                        <div style={{ border: '1px solid var(--border)', borderRadius: '8px', padding: '14px 18px', textAlign: 'center' }}>
+                            {previewLines.map((line, index) => (
+                                <p key={index} style={{ fontSize: '18px', fontWeight: 700, lineHeight: 1.2, margin: 0 }}>{line}</p>
+                            ))}
+                        </div>
                         <p style={{ fontSize: '13px' }}>PDF preview endpoint: {previewUrl}</p>
                     </div>
                 ) : (
-                    <p>Enter QR data to generate preview.</p>
+                    <p>Enter scanned text to generate preview.</p>
                 )}
             </div>
 

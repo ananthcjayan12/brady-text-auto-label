@@ -10,9 +10,6 @@ import uuid
 import subprocess
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
-from reportlab.graphics.barcode import qr as qrbarcode
-from reportlab.graphics.shapes import Drawing
-from reportlab.graphics import renderPDF
 
 # Import services (we'll create this next)
 from services import PDFProcessingService, PrintService
@@ -40,7 +37,42 @@ def _clamp(value, minimum, maximum):
     return max(minimum, min(maximum, value))
 
 
-def generate_qr_label_pdf(data, label, label_settings=None):
+def _default_date_text():
+    return datetime.datetime.now().strftime('%d %b %Y').upper()
+
+
+def _parse_scanned_text_fields(raw_data):
+    value = (raw_data or '').strip()
+    if not value:
+        return {'first_value': '', 'last_value': ''}
+
+    parts = [part.strip() for part in value.split(';')]
+    first_value = parts[0] if parts and parts[0] else value
+    non_empty_parts = [part for part in parts if part]
+    last_value = non_empty_parts[-1] if non_empty_parts else first_value
+    return {'first_value': first_value, 'last_value': last_value}
+
+
+def _normalize_text_fields(raw_data, text_fields=None):
+    parsed = _parse_scanned_text_fields(raw_data)
+    fields = text_fields or {}
+
+    first_value = (fields.get('first_value') or fields.get('firstValue') or parsed['first_value']).strip()
+    last_value = (fields.get('last_value') or fields.get('lastValue') or parsed['last_value']).strip()
+    date_text = (fields.get('date_text') or fields.get('dateText') or _default_date_text()).strip()
+    pincode = (fields.get('pincode') or '482305').strip()
+    country = (fields.get('country') or 'INDIA').strip()
+
+    return {
+        'first_value': first_value,
+        'last_value': last_value,
+        'date_text': date_text,
+        'pincode': pincode,
+        'country': country
+    }
+
+
+def generate_qr_label_pdf(data, label, label_settings=None, text_fields=None):
     if label_settings is None:
         label_settings = {}
 
@@ -52,34 +84,38 @@ def generate_qr_label_pdf(data, label, label_settings=None):
     if not data:
         raise ValueError('QR data is required')
 
+    should_render_fields = bool(text_fields) or ';' in data
+    normalized_fields = _normalize_text_fields(data, text_fields) if should_render_fields else None
+
     packet = io.BytesIO()
     c = canvas.Canvas(packet, pagesize=(width * inch, height * inch))
 
     margin = 0.12 * inch
-    label_height = 0.26 * inch if label else 0
-    available_width = (width * inch) - (2 * margin)
-    available_height = (height * inch) - (2 * margin) - label_height
-
-    qr_size = min(available_width, available_height)
-    qr_x = ((width * inch) - qr_size) / 2
-    qr_y = margin + (available_height - qr_size) / 2
-
-    qr_widget = qrbarcode.QrCodeWidget(data)
-    bounds = qr_widget.getBounds()
-    qr_drawing = Drawing(qr_size, qr_size, transform=[
-        qr_size / (bounds[2] - bounds[0]),
-        0,
-        0,
-        qr_size / (bounds[3] - bounds[1]),
-        -bounds[0] * qr_size / (bounds[2] - bounds[0]),
-        -bounds[1] * qr_size / (bounds[3] - bounds[1])
-    ])
-    qr_drawing.add(qr_widget)
-    renderPDF.draw(qr_drawing, c, qr_x, qr_y)
+    lines = []
+    if normalized_fields:
+        lines = [
+            normalized_fields['first_value'],
+            normalized_fields['last_value'],
+            normalized_fields['date_text'],
+            f"{normalized_fields['pincode']} {normalized_fields['country']}".strip()
+        ]
+    elif data:
+        lines = [data]
 
     if label:
-        c.setFont('Helvetica', 9)
-        c.drawCentredString((width * inch) / 2, margin * 0.6, label[:80])
+        lines.insert(0, label)
+
+    lines = [line[:80] for line in lines if line]
+
+    if lines:
+        line_height = 0.14 * inch
+        total_height = (len(lines) - 1) * line_height
+        start_y = ((height * inch) / 2) + (total_height / 2)
+
+        c.setFont('Courier-Bold', 10)
+        for line in lines:
+            c.drawCentredString((width * inch) / 2, start_y, line)
+            start_y -= line_height
 
     c.showPage()
     c.save()
@@ -459,7 +495,14 @@ def qr_preview():
             'width': request.args.get('width', 3.94),
             'height': request.args.get('height', 2.0)
         }
-        pdf_bytes = generate_qr_label_pdf(data, label, label_settings)
+        text_fields = {
+            'first_value': request.args.get('first_value', ''),
+            'last_value': request.args.get('last_value', ''),
+            'date_text': request.args.get('date_text', ''),
+            'pincode': request.args.get('pincode', ''),
+            'country': request.args.get('country', '')
+        }
+        pdf_bytes = generate_qr_label_pdf(data, label, label_settings, text_fields)
         return send_file(
             io.BytesIO(pdf_bytes),
             mimetype='application/pdf',
@@ -477,6 +520,7 @@ def print_qr_label():
     label = (data.get('label') or '').strip()
     printer_name = data.get('printer_name')
     label_settings = data.get('label_settings') or {}
+    text_fields = data.get('text_fields') or {}
     username = data.get('username', 'Unknown')
 
     if not qr_data:
@@ -487,7 +531,7 @@ def print_qr_label():
     timestamp = datetime.datetime.now().isoformat()
 
     try:
-        pdf_bytes = generate_qr_label_pdf(qr_data, label, label_settings)
+        pdf_bytes = generate_qr_label_pdf(qr_data, label, label_settings, text_fields)
 
         if platform.system() == 'Darwin':
             pdf_service.log_print_job({

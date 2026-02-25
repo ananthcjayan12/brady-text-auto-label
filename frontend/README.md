@@ -2,7 +2,8 @@
 
 This frontend is now a template UI for:
 
-- Entering QR payload text/URL
+- Pasting scanned QR payload text (`;` separated)
+- Auto-filling editable label fields (first value, last value, date, pincode, country)
 - Previewing generated QR locally in the browser
 - Sending print jobs to the local print bridge
 
@@ -25,7 +26,8 @@ npm run dev
 ## Template Flow
 
 1. Configure server URL and printer.
-2. Enter QR data and optional label text.
-3. Click **Generate & Print QR**.
+2. Paste scanned QR text (example: `113A8200-625;...;110000730222`).
+3. Review/edit auto-filled fields and optional label text.
+4. Click **Generate & Print QR**.
 
 On macOS, backend runs in preview mode and opens generated PDF preview instead of physical print.

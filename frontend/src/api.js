@@ -16,12 +16,13 @@ export const api = {
         return res.data;
     },
 
-    printQrLabel: async ({ data, label, printerName = null, labelSettings = {}, username = 'template-user' }) => {
+    printQrLabel: async ({ data, label, printerName = null, labelSettings = {}, textFields = null, username = 'template-user' }) => {
         const res = await axios.post(`${getBaseUrl()}/api/qr/print`, {
             data,
             label,
             printer_name: printerName,
             label_settings: labelSettings,
+            text_fields: textFields,
             username
         });
         return res.data;
