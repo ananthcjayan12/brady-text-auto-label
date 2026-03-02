@@ -239,20 +239,40 @@ function QRTemplatePage() {
                     />
 
                     <label style={{ fontSize: '13px', fontWeight: 500 }}>First Value</label>
-                    <input
-                        className="input"
-                        value={textFields.firstValue}
-                        onChange={(e) => setTextFields((prev) => ({ ...prev, firstValue: e.target.value }))}
-                        style={{ marginTop: '6px', marginBottom: '10px' }}
-                    />
+                    <div
+                        style={{
+                            marginTop: '6px',
+                            marginBottom: '10px',
+                            minHeight: '42px',
+                            padding: '10px 12px',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            background: 'var(--card-bg)',
+                            color: textFields.firstValue ? 'var(--text)' : 'var(--text-secondary)',
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                    >
+                        {textFields.firstValue || 'Auto-filled from QR scan'}
+                    </div>
 
                     <label style={{ fontSize: '13px', fontWeight: 500 }}>Last Value</label>
-                    <input
-                        className="input"
-                        value={textFields.lastValue}
-                        onChange={(e) => setTextFields((prev) => ({ ...prev, lastValue: e.target.value }))}
-                        style={{ marginTop: '6px', marginBottom: '10px' }}
-                    />
+                    <div
+                        style={{
+                            marginTop: '6px',
+                            marginBottom: '10px',
+                            minHeight: '42px',
+                            padding: '10px 12px',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            background: 'var(--card-bg)',
+                            color: textFields.lastValue ? 'var(--text)' : 'var(--text-secondary)',
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                    >
+                        {textFields.lastValue || 'Auto-filled from QR scan'}
+                    </div>
 
                     <label style={{ fontSize: '13px', fontWeight: 500 }}>Date</label>
                     <input
@@ -263,20 +283,40 @@ function QRTemplatePage() {
                     />
 
                     <label style={{ fontSize: '13px', fontWeight: 500 }}>Pincode</label>
-                    <input
-                        className="input"
-                        value={textFields.pincode}
-                        onChange={(e) => setTextFields((prev) => ({ ...prev, pincode: e.target.value }))}
-                        style={{ marginTop: '6px', marginBottom: '10px' }}
-                    />
+                    <div
+                        style={{
+                            marginTop: '6px',
+                            marginBottom: '10px',
+                            minHeight: '42px',
+                            padding: '10px 12px',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            background: 'var(--card-bg)',
+                            color: textFields.pincode ? 'var(--text)' : 'var(--text-secondary)',
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                    >
+                        {textFields.pincode || 'Auto-filled from QR scan'}
+                    </div>
 
                     <label style={{ fontSize: '13px', fontWeight: 500 }}>Country</label>
-                    <input
-                        className="input"
-                        value={textFields.country}
-                        onChange={(e) => setTextFields((prev) => ({ ...prev, country: e.target.value }))}
-                        style={{ marginTop: '6px', marginBottom: '16px' }}
-                    />
+                    <div
+                        style={{
+                            marginTop: '6px',
+                            marginBottom: '16px',
+                            minHeight: '42px',
+                            padding: '10px 12px',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            background: 'var(--card-bg)',
+                            color: textFields.country ? 'var(--text)' : 'var(--text-secondary)',
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                    >
+                        {textFields.country || 'Auto-filled from QR scan'}
+                    </div>
 
                     {countdown !== null && countdown > 0 && (
                         <div style={{
