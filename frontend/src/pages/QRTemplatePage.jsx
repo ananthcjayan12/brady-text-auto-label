@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { Printer, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Printer, CheckCircle, AlertCircle } from 'lucide-react';
 import { api } from '../api';
 
 const DEFAULT_SCANNED_TEXT = '113A8200-625;DOOR ASSY-CENTER & INBD MLG;;000119061000300029;110000730222';
@@ -28,7 +28,6 @@ function QRTemplatePage() {
     const [scannedText, setScannedText] = useState('');
     const [label, setLabel] = useState('');
     const [printing, setPrinting] = useState(false);
-    const [countdown, setCountdown] = useState(null);
     const [textFields, setTextFields] = useState(() => {
         return {
             firstValue: '',
@@ -39,7 +38,6 @@ function QRTemplatePage() {
         };
     });
 
-    const printTimerRef = useRef(null);
     const scanInputRef = useRef(null);
 
     const qrData = scannedText.trim();
@@ -75,11 +73,6 @@ function QRTemplatePage() {
 
     const selectedPrinter = useMemo(() => {
         return localStorage.getItem('selected_printer') || '';
-    }, []);
-
-    const autoPrintDelay = useMemo(() => {
-        const stored = localStorage.getItem('auto_print_delay');
-        return stored ? parseInt(stored, 10) : 2;
     }, []);
 
     const previewUrl = useMemo(() => {
@@ -164,13 +157,6 @@ function QRTemplatePage() {
     };
 
     const onScannedTextChange = (value) => {
-        // Clear any pending print timer
-        if (printTimerRef.current) {
-            clearTimeout(printTimerRef.current);
-            clearInterval(printTimerRef.current);
-        }
-        setCountdown(null);
-
         setScannedText(value);
         const parsed = parseScannedText(value);
         const newFields = {
@@ -181,42 +167,18 @@ function QRTemplatePage() {
             country: 'INDIA'
         };
         setTextFields(newFields);
-
-        // Trigger auto-print after delay if text is valid
-        if (value.trim() && autoPrintDelay >= 0) {
-            let timeLeft = autoPrintDelay;
-            setCountdown(timeLeft);
-
-            const countdownInterval = setInterval(() => {
-                timeLeft -= 0.1;
-                setCountdown(Math.max(0, timeLeft));
-            }, 100);
-
-            printTimerRef.current = setTimeout(() => {
-                clearInterval(countdownInterval);
-                setCountdown(null);
-                onPrint(value.trim(), newFields);
-            }, autoPrintDelay * 1000);
-        }
     };
 
     useEffect(() => {
         // Focus scan input on mount
         scanInputRef.current?.focus();
-
-        // Cleanup timer on unmount
-        return () => {
-            if (printTimerRef.current) {
-                clearTimeout(printTimerRef.current);
-            }
-        };
     }, []);
 
     return (
         <div className="container" style={{ maxWidth: '900px', paddingTop: '40px', paddingBottom: '40px' }}>
             <div className="card" style={{ marginBottom: '16px' }}>
                 <h1 style={{ marginBottom: '8px' }}>QR Label Scanner</h1>
-                <p>Scan or paste QR text to automatically generate and print labels.</p>
+                <p>Scan or paste QR text, review, then print labels manually.</p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -317,23 +279,6 @@ function QRTemplatePage() {
                     >
                         {textFields.country || 'Auto-filled from QR scan'}
                     </div>
-
-                    {countdown !== null && countdown > 0 && (
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '10px',
-                            background: 'var(--primary-light)',
-                            borderRadius: '6px',
-                            marginBottom: '10px'
-                        }}>
-                            <Clock size={16} color="var(--primary)" />
-                            <span style={{ fontSize: '13px', fontWeight: 500 }}>
-                                Auto-printing in {countdown.toFixed(1)}s...
-                            </span>
-                        </div>
-                    )}
 
                     <button
                         className="btn btn-primary"

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Server, RefreshCw, CheckCircle, XCircle, Printer, Clock, Save } from 'lucide-react';
+import { Server, RefreshCw, CheckCircle, XCircle, Printer, Save } from 'lucide-react';
 import { api } from '../api';
 
 function SettingsPage() {
@@ -15,8 +15,6 @@ function SettingsPage() {
         height: 2.0
     });
 
-    const [autoPrintDelay, setAutoPrintDelay] = useState(2);
-
     useEffect(() => {
         const storedUrl = localStorage.getItem('api_url');
         if (storedUrl) setServerUrl(storedUrl);
@@ -31,9 +29,6 @@ function SettingsPage() {
                 });
             } catch (e) { }
         }
-
-        const storedDelay = localStorage.getItem('auto_print_delay');
-        if (storedDelay) setAutoPrintDelay(parseInt(storedDelay, 10));
 
         const storedPrinter = localStorage.getItem('selected_printer');
         if (storedPrinter) setSelectedPrinter(storedPrinter);
@@ -80,7 +75,7 @@ function SettingsPage() {
         localStorage.setItem('api_url', normalizedUrl);
         localStorage.setItem('selected_printer', selectedPrinter);
         localStorage.setItem('label_settings', JSON.stringify(labelSettings));
-        localStorage.setItem('auto_print_delay', autoPrintDelay.toString());
+        localStorage.removeItem('auto_print_delay');
 
         setStatus({ type: 'success', message: 'All settings saved successfully!' });
         setTimeout(() => setStatus({ type: 'idle', message: '' }), 3000);
@@ -90,7 +85,7 @@ function SettingsPage() {
         <div className="container" style={{ maxWidth: '800px', paddingTop: '40px', paddingBottom: '40px' }}>
             <div className="card" style={{ marginBottom: '16px' }}>
                 <h1 style={{ marginBottom: '8px' }}>Application Settings</h1>
-                <p>Configure server connection, printer, label dimensions, and auto-print behavior.</p>
+                <p>Configure server connection, printer, and label dimensions.</p>
             </div>
 
             {/* Server Connection */}
@@ -183,31 +178,6 @@ function SettingsPage() {
                         />
                     </div>
                 </div>
-            </div>
-
-            {/* Auto-Print Settings */}
-            <div className="card" style={{ marginBottom: '16px' }}>
-                <div className="flex items-center" style={{ marginBottom: '16px' }}>
-                    <Clock size={20} color="var(--primary)" />
-                    <h3 style={{ margin: 0, marginLeft: '10px' }}>Auto-Print Settings</h3>
-                </div>
-
-                <label style={{ fontSize: '13px', fontWeight: 500 }}>
-                    Auto-Print Delay (seconds)
-                </label>
-                <input
-                    className="input"
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.5"
-                    value={autoPrintDelay}
-                    onChange={(e) => setAutoPrintDelay(Number(e.target.value) || 0)}
-                    style={{ marginTop: '6px', marginBottom: '8px' }}
-                />
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
-                    Delay before automatically printing after scanning. Set to 0 for instant print.
-                </p>
             </div>
 
             {/* Save All */}

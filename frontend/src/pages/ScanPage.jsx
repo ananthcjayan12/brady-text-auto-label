@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import BarcodeInput from '../components/BarcodeInput';
-import LabelPreview from '../components/LabelPreview';
 import { api } from '../api';
 import { AlertTriangle, Copy, Clock, Printer } from 'lucide-react';
 
@@ -10,58 +9,15 @@ function ScanPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isPrinting, setIsPrinting] = useState(false);
     const [error, setError] = useState(null);
-    const [countdown, setCountdown] = useState(null);
     const [showDuplicateModal, setShowDuplicateModal] = useState(false);
     const [duplicateInfo, setDuplicateInfo] = useState(null);
-    const autoPrintTimerRef = useRef(null);
-
-    // Get auto-print delay from settings (default 3 seconds)
-    const getAutoPrintDelay = () => {
-        const saved = localStorage.getItem('auto_print_delay');
-        return saved ? parseInt(saved, 10) : 3;
-    };
-
-    // Auto-print effect: triggers print after countdown (only if not a duplicate)
-    useEffect(() => {
-        if (scanResult && !isPrinting && !showDuplicateModal) {
-            const delay = getAutoPrintDelay();
-            setCountdown(delay);
-
-            // Start countdown
-            const countdownInterval = setInterval(() => {
-                setCountdown(prev => {
-                    if (prev <= 1) {
-                        clearInterval(countdownInterval);
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-
-            // Auto-print timer
-            autoPrintTimerRef.current = setTimeout(() => {
-                handlePrint();
-            }, delay * 1000);
-
-            return () => {
-                clearTimeout(autoPrintTimerRef.current);
-                clearInterval(countdownInterval);
-            };
-        }
-    }, [scanResult, showDuplicateModal]);
 
     const handleLookup = async (code) => {
         if (!code) return;
 
-        // Cancel any pending auto-print
-        if (autoPrintTimerRef.current) {
-            clearTimeout(autoPrintTimerRef.current);
-        }
-
         setIsLoading(true);
         setError(null);
         setScanResult(null);
-        setCountdown(null);
         setShowDuplicateModal(false);
         setDuplicateInfo(null);
 
@@ -95,12 +51,6 @@ function ScanPage() {
 
     const handlePrint = async () => {
         if (!scanResult || isPrinting) return;
-
-        // Cancel countdown
-        if (autoPrintTimerRef.current) {
-            clearTimeout(autoPrintTimerRef.current);
-        }
-        setCountdown(null);
         setShowDuplicateModal(false);
 
         setIsPrinting(true);
@@ -144,15 +94,10 @@ function ScanPage() {
     };
 
     const handleDuplicateProceed = () => {
-        setShowDuplicateModal(false);
-        // Start auto-print countdown after user confirms
+        handlePrint();
     };
 
-    const cancelAutoPrint = () => {
-        if (autoPrintTimerRef.current) {
-            clearTimeout(autoPrintTimerRef.current);
-        }
-        setCountdown(null);
+    const clearScanState = () => {
         setScanResult(null);
         setBarcode('');
         setShowDuplicateModal(false);
@@ -174,7 +119,7 @@ function ScanPage() {
         <div style={{ maxWidth: '480px', margin: '60px auto' }}>
             <div className="text-center" style={{ marginBottom: '32px' }}>
                 <h1 style={{ marginBottom: '8px' }}>Scan to Print</h1>
-                <p>Scan a barcode. Label prints automatically.</p>
+                <p>Scan a barcode, review, then click print.</p>
             </div>
 
             <BarcodeInput
@@ -265,7 +210,7 @@ function ScanPage() {
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button
                                 className="btn btn-secondary"
-                                onClick={cancelAutoPrint}
+                                onClick={clearScanState}
                                 style={{ flex: 1 }}
                             >
                                 Cancel
@@ -322,35 +267,28 @@ function ScanPage() {
                         />
                     </div>
 
-                    {countdown !== null && countdown > 0 && (
-                        <div style={{ marginBottom: '16px' }}>
-                            <div style={{
-                                fontSize: '32px',
-                                fontWeight: '700',
-                                color: 'var(--primary)',
-                                marginBottom: '4px'
-                            }}>
-                                {countdown}
-                            </div>
-                            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                                Printing automatically...
-                            </div>
-                        </div>
-                    )}
-
                     {isPrinting && (
                         <div style={{ color: 'var(--primary)', fontWeight: 500 }}>
                             Sending to printer...
                         </div>
                     )}
 
-                    <button
-                        className="btn btn-secondary"
-                        onClick={cancelAutoPrint}
-                        style={{ marginTop: '12px' }}
-                    >
-                        Cancel
-                    </button>
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '12px' }}>
+                        <button
+                            className="btn btn-primary"
+                            onClick={handlePrint}
+                            disabled={isPrinting}
+                        >
+                            {isPrinting ? 'Printing...' : 'Print'}
+                        </button>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={clearScanState}
+                            disabled={isPrinting}
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

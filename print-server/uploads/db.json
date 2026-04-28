@@ -492,6 +492,45 @@
       "username": "template-user",
       "barcode": "113A8200-625;DOOR ASSY-CENTER & INBD MLG;;000119061000300029;110000730222",
       "message": "Preview generated"
+    },
+    {
+      "id": "ca7b8e8e-19fb-48e5-aaf6-aae0096aabf2",
+      "file_id": "qr-template",
+      "doc_name": "QR Label",
+      "page_num": 1,
+      "printer": "Preview (macOS)",
+      "status": "success",
+      "timestamp": "2026-02-25T15:21:49.830005",
+      "error": null,
+      "username": "template-user",
+      "barcode": "https://brady-text-auto-label.pages.dev/",
+      "message": "Preview generated"
+    },
+    {
+      "id": "695fefa3-3e19-4e83-9a80-c00b83481599",
+      "file_id": "qr-template",
+      "doc_name": "QR Label",
+      "page_num": 1,
+      "printer": "Preview (macOS)",
+      "status": "success",
+      "timestamp": "2026-03-02T11:44:04.269417",
+      "error": null,
+      "username": "template-user",
+      "barcode": "s",
+      "message": "Preview generated"
+    },
+    {
+      "id": "bbd3eb36-51d3-4244-968e-97d92adedc89",
+      "file_id": "qr-template",
+      "doc_name": "QR Label",
+      "page_num": 1,
+      "printer": "Preview (macOS)",
+      "status": "success",
+      "timestamp": "2026-03-02T11:46:30.501076",
+      "error": null,
+      "username": "template-user",
+      "barcode": "113A8200-625;DOOR ASSY-CENTER & INBD MLG;;000119061000300029;110000730222",
+      "message": "Preview generated"
     }
   ],
   "users": [
