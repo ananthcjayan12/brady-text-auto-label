@@ -92,7 +92,8 @@ function QRTemplatePage() {
     }, [serverUrl, qrData, label, labelSettings, textFields]);
 
     const onPrint = async (dataOverride = null, fieldsOverride = null) => {
-        const dataToUse = dataOverride !== null ? dataOverride : qrData;
+        const isEventObject = dataOverride && typeof dataOverride === 'object' && 'nativeEvent' in dataOverride;
+        const dataToUse = dataOverride !== null && !isEventObject ? dataOverride : qrData;
         const fieldsToUse = fieldsOverride !== null ? fieldsOverride : textFields;
 
         if (!dataToUse) {
@@ -282,7 +283,7 @@ function QRTemplatePage() {
 
                     <button
                         className="btn btn-primary"
-                        onClick={onPrint}
+                        onClick={() => onPrint()}
                         disabled={printing || !qrData}
                         style={{ width: '100%' }}
                     >
